@@ -7,7 +7,6 @@ import posthog from "posthog-js";
 
 import { SessionControls } from "@/app/components/SessionControls";
 import BrowserSessionContainer from "@/app/components/BrowserSessionContainer";
-import { SessionLiveURLs } from "@browserbasehq/sdk/resources/index.mjs";
 import BrowserTabs from "@/app/components/ui/BrowserTabs";
 import NavBar from "@/app/components/NavBar";
 import PinnedGoalMessage from "@/app/components/chat/PinnedGoalMessage";
@@ -17,6 +16,16 @@ import ChatInput from "@/app/components/chat/ChatInput";
 import { useAgentStream } from "@/app/hooks/useAgentStream";
 import { ChatFeedProps, AgentState, BrowserStep } from "@/app/types/ChatFeed";
 
+// Page type for browser tabs
+interface Page {
+  id: string;
+  title?: string;
+  url?: string;
+  faviconUrl?: string;
+  debuggerFullscreenUrl?: string;
+  debuggerUrl?: string;
+}
+
 export default function ChatFeed({
   initialMessage,
   onClose,
@@ -24,7 +33,7 @@ export default function ChatFeed({
   const renderCount = useRef(0);
   renderCount.current++;
   console.log(`[ChatFeed] Component rendered #${renderCount.current} with initialMessage: "${initialMessage?.substring(0, 50)}..."`);
-  const [activePage, setActivePage] = useState<SessionLiveURLs.Page | null>(
+  const [activePage, setActivePage] = useState<Page | null>(
     null
   );
   const [sessionTime, setSessionTime] = useState(0);

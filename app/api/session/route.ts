@@ -1,220 +1,43 @@
-import Browserbase from "@browserbasehq/sdk";
-import { getAll } from "@vercel/edge-config";
+import Kernel from "@onkernel/sdk";
 import { NextResponse } from "next/server";
 
-type BrowserbaseRegion =
-  | "us-west-2"
-  | "us-east-1"
-  | "eu-central-1"
-  | "ap-southeast-1";
-
-// Timezone abbreviation to region mapping
-const timezoneAbbreviationMap: Record<string, BrowserbaseRegion> = {
-  // US East Coast
-  EST: "us-east-1",
-  EDT: "us-east-1",
-
-  // US West Coast
-  PST: "us-west-2",
-  PDT: "us-west-2",
-
-  // US Mountain/Central - route to appropriate region
-  MST: "us-west-2",
-  MDT: "us-west-2",
-  CST: "us-east-1",
-  CDT: "us-east-1",
-
-  // Europe
-  GMT: "eu-central-1",
-  BST: "eu-central-1",
-  CET: "eu-central-1",
-  CEST: "eu-central-1",
-  EET: "eu-central-1",
-  EEST: "eu-central-1",
-  WET: "eu-central-1",
-  WEST: "eu-central-1",
-
-  // Asia-Pacific
-  JST: "ap-southeast-1", // Japan Standard Time
-  KST: "ap-southeast-1", // Korea Standard Time
-  IST: "ap-southeast-1", // India Standard Time
-  AEST: "ap-southeast-1", // Australian Eastern Standard Time
-  AEDT: "ap-southeast-1", // Australian Eastern Daylight Time
-  AWST: "ap-southeast-1", // Australian Western Standard Time
-  NZST: "ap-southeast-1", // New Zealand Standard Time
-  NZDT: "ap-southeast-1", // New Zealand Daylight Time
-};
-
-// Default fallback distributions if edge config is not available
-const defaultDistributions: Record<
-  BrowserbaseRegion,
-  Record<BrowserbaseRegion, number>
-> = {
-  "us-west-2": {
-    "us-west-2": 100,
-    "us-east-1": 0,
-    "eu-central-1": 0,
-    "ap-southeast-1": 0,
-  },
-  "us-east-1": {
-    "us-east-1": 100,
-    "us-west-2": 0,
-    "eu-central-1": 0,
-    "ap-southeast-1": 0,
-  },
-  "eu-central-1": {
-    "eu-central-1": 100,
-    "us-west-2": 0,
-    "us-east-1": 0,
-    "ap-southeast-1": 0,
-  },
-  "ap-southeast-1": {
-    "ap-southeast-1": 100,
-    "us-west-2": 0,
-    "us-east-1": 0,
-    "eu-central-1": 0,
-  },
-};
-
-function selectRegionWithProbability(
-  baseRegion: BrowserbaseRegion,
-  distributions: Record<BrowserbaseRegion, Record<BrowserbaseRegion, number>>
-): BrowserbaseRegion {
-  const distribution = distributions[baseRegion];
-  if (!distribution) {
-    return baseRegion;
-  }
-
-  const random = Math.random() * 100; // Generate random number between 0-100
-
-  let cumulativeProbability = 0;
-  for (const [region, probability] of Object.entries(distribution)) {
-    cumulativeProbability += probability;
-    if (random < cumulativeProbability) {
-      return region as BrowserbaseRegion;
-    }
-  }
-
-  // Fallback to base region if something goes wrong
-  return baseRegion;
-}
-
-function getRegionFromTimezoneAbbr(timezoneAbbr?: string): BrowserbaseRegion {
-  try {
-    if (!timezoneAbbr) {
-      return "us-west-2"; // Default if no timezone provided
-    }
-
-    // Direct lookup from timezone abbreviation
-    const region = timezoneAbbreviationMap[timezoneAbbr.toUpperCase()];
-    if (region) {
-      return region;
-    }
-
-    // Fallback to us-west-2 for unknown abbreviations
-    return "us-west-2";
-  } catch {
-    return "us-west-2";
-  }
-}
-
-interface EdgeConfig {
-  advancedStealth: boolean | undefined;
-  proxies: boolean | undefined;
-  regionDistribution:
-    | Record<BrowserbaseRegion, Record<BrowserbaseRegion, number>>
-    | undefined;
-}
-
-async function createSession(timezone?: string) {
-  const bb = new Browserbase({
-    apiKey: process.env.BROWSERBASE_API_KEY!,
+async function createSession() {
+  const kernel = new Kernel({
+    apiKey: process.env.KERNEL_API_KEY!,
   });
 
-  const config = await getAll<EdgeConfig>();
-
-  const {
-    advancedStealth: advancedStealthConfig,
-    proxies: proxiesConfig,
-    regionDistribution: distributionsConfig,
-  } = config;
-
-  const advancedStealth: boolean = advancedStealthConfig ?? true;
-  const proxies: boolean = proxiesConfig ?? true;
-
-  // Build browserSettings conditionally
-  const browserSettings: Browserbase.Sessions.SessionCreateParams.BrowserSettings =
-    {
-      viewport: {
-        width: 2560,
-        height: 1440,
-      },
-      blockAds: true,
-      advancedStealth,
-      // Only set os if advancedStealth is true
-      ...(advancedStealth
-        ? {
-            os: "windows",
-          }
-        : {
-            os: "linux",
-          }),
-    };
-
-  // Use timezone abbreviation to determine base region
-  const closestRegion = getRegionFromTimezoneAbbr(timezone);
-
-  // Get distributions from config or use default
-  const distributions = distributionsConfig ?? defaultDistributions;
-
-  // Apply probability routing for potential load balancing
-  const finalRegion = selectRegionWithProbability(closestRegion, distributions);
-
-  console.log("timezone abbreviation:", timezone);
-  console.log("mapped to region:", closestRegion);
-  console.log("final region after probability routing:", finalRegion);
-
-  const session = await bb.sessions.create({
-    projectId: process.env.BROWSERBASE_PROJECT_ID!,
-    proxies,
-    browserSettings,
-    keepAlive: true,
-    region: finalRegion,
+  const browser = await kernel.browsers.create({
+    stealth: true,
+    viewport: {
+      width: 1920,
+      height: 1080,
+    },
   });
+
+  console.log("Created Kernel browser session:", browser.session_id);
+  console.log("Live view URL:", browser.browser_live_view_url);
+
   return {
-    session,
+    session: browser,
   };
 }
 
 async function endSession(sessionId: string) {
-  const bb = new Browserbase({
-    apiKey: process.env.BROWSERBASE_API_KEY!,
+  const kernel = new Kernel({
+    apiKey: process.env.KERNEL_API_KEY!,
   });
-  await bb.sessions.update(sessionId, {
-    projectId: process.env.BROWSERBASE_PROJECT_ID!,
-    status: "REQUEST_RELEASE",
-  });
+  await kernel.browsers.deleteByID(sessionId);
 }
 
-async function getDebugUrl(sessionId: string) {
-  const bb = new Browserbase({
-    apiKey: process.env.BROWSERBASE_API_KEY!,
-  });
-  const session = await bb.sessions.debug(sessionId);
-  return session.debuggerFullscreenUrl;
-}
-
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const body = await request.json();
-    const timezone = body.timezone as string;
-    const { session } = await createSession(timezone);
-    const liveUrl = await getDebugUrl(session.id);
+    const { session } = await createSession();
 
     return NextResponse.json({
       success: true,
-      sessionId: session.id,
-      sessionUrl: liveUrl,
+      sessionId: session.session_id,
+      sessionUrl: session.browser_live_view_url,
+      cdpWsUrl: session.cdp_ws_url,
     });
   } catch (error) {
     console.error("Error creating session:", error);

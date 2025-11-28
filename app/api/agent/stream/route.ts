@@ -18,14 +18,17 @@ function sseComment(comment: string): Uint8Array {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const [sessionId, goal] = [
+  const [sessionId, goal, cdpWsUrl] = [
     searchParams.get("sessionId"),
     searchParams.get("goal"),
+    searchParams.get("cdpWsUrl"),
   ];
 
-  if (!sessionId || !goal) {
+  if (!sessionId || !goal || !cdpWsUrl) {
     return new Response(
-      JSON.stringify({ error: "Missing required params: sessionId and goal" }),
+      JSON.stringify({
+        error: "Missing required params: sessionId, goal, and cdpWsUrl",
+      }),
       {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -107,21 +110,13 @@ export async function GET(request: Request) {
       const logger = createStagehandUserLogger(send, { forwardStepEvents: false });
 
       const stagehand = new Stagehand({
-        env: "BROWSERBASE",
-        browserbaseSessionID: sessionId,
+        env: "LOCAL",
+        localBrowserLaunchOptions: {
+          cdpUrl: cdpWsUrl,
+        },
         modelName: "openai/gpt-4o",
         modelClientOptions: {
           apiKey: process.env.OPENAI_API_KEY,
-        },
-        browserbaseSessionCreateParams: {
-          projectId: process.env.BROWSERBASE_PROJECT_ID!,
-          proxies: true,
-          browserSettings: {
-            viewport: {
-              width: 1288,
-              height: 711,
-            },
-          },
         },
         useAPI: false,
         verbose: 2,
