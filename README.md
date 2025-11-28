@@ -1,16 +1,14 @@
 # Gemini CUA Browser
 
-[Demo](https://gemini.browserbase.com)
-
-A powerful browser automation playground powered by Gemini's new Computer Use Agent and Browserbase. This free demo showcases the capabilities of AI-driven browser automation using Stagehand and Gemini's computer-use capabilities.
+A powerful browser automation playground powered by Gemini's new Computer Use Agent and Kernel. This free demo showcases the capabilities of AI-driven browser automation using Stagehand and Gemini's computer-use capabilities.
 
 ## Features
 
 - 🤖 **Gemini Computer Use Agent**: Leverages Gemini's `computer-use-preview-10-2025` model for intelligent web interactions
-- 🌐 **Real Browser Control**: Runs on browsers via Browserbase's infrastructure
+- 🌐 **Real Browser Control**: Runs on cloud browsers via Kernel's infrastructure
 - 🎯 **Natural Language Commands**: Describe tasks in plain English and watch the AI execute them
 - 📊 **Real-time Streaming**: Server-Sent Events (SSE) for live agent feedback and progress updates
-- 🔄 **Session Management**: Persistent browser sessions with automatic viewport management
+- 🔄 **Session Management**: Browser sessions with automatic viewport management
 
 ## Tech Stack
 
@@ -23,14 +21,14 @@ A powerful browser automation playground powered by Gemini's new Computer Use Ag
 
 ### Backend
 - **AI Model**: Gemini Computer Use (`computer-use-preview-10-2025`)
-- **Browser Automation**: Browserbase + Stagehand
+- **Browser Automation**: Kernel + Stagehand
 - **Agent Framework**: Stagehand with Playwright Core
 - **Streaming**: Server-Sent Events (SSE) 
 - **Runtime**: Node.js with Next.js API routes
 
 ### Infrastructure
+- **Cloud Browsers**: [Kernel](https://onkernel.com) for browser infrastructure with stealth mode and live view
 - **Analytics**: PostHog for user tracking
-- **Configuration**: Vercel Edge Config for region distribution
 - **Deployment**: Optimized for Vercel with 600s max duration
 
 ## Prerequisites
@@ -39,7 +37,7 @@ A powerful browser automation playground powered by Gemini's new Computer Use Ag
 - pnpm 10.x or later (recommended)
 - API keys:
   - [Google AI Studio](https://aistudio.google.com/apikey) - for Computer Use Agent
-  - [Browserbase](https://www.browserbase.com) - for browser infrastructure
+  - [Kernel](https://onkernel.com) - for cloud browser infrastructure
 
 ## Getting Started
 
@@ -61,12 +59,14 @@ cp .env.example .env.local
 
 Edit `.env.local` with your credentials:
 ```env
+# OpenAI API Key (used for Stagehand internal operations)
+OPENAI_API_KEY=your_openai_api_key
+
 # Google AI Studio API Key
 GOOGLE_API_KEY=your_google_api_key
 
-# Browserbase Configuration
-BROWSERBASE_API_KEY=your_browserbase_api_key
-BROWSERBASE_PROJECT_ID=your_browserbase_project_id
+# Kernel Configuration
+KERNEL_API_KEY=your_kernel_api_key
 
 # Optional: Analytics
 NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
@@ -74,9 +74,6 @@ NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
 
 # Optional: Site URL
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-
-# Optional: Vercel Edge Config
-EDGE_CONFIG=your_edge_config_url
 ```
 
 ### 4. Start the development server
@@ -130,7 +127,7 @@ MIT
 
 ## Acknowledgments
 
-- [Browserbase](https://browserbase.com) - Browser infrastructure and remote browser sessions
+- [Kernel](https://onkernel.com) - Cloud browser infrastructure with stealth mode, live view, and anti-detection features
 - [Stagehand](https://github.com/browserbasehq/stagehand) - Browser automation framework with AI capabilities
 - [Google AI Studio](https://aistudio.google.com/) - Computer Use Agent API
-- [Vercel](https://vercel.com) - Hosting, edge functions, and edge config
+- [Vercel](https://vercel.com) - Hosting and edge functions

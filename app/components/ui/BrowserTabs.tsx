@@ -1,6 +1,13 @@
 import { cn } from "@/lib/utils";
-import { SessionLiveURLs } from "@browserbasehq/sdk/resources/index.mjs";
 import { useEffect, useState } from "react";
+
+// Page type matching the expected shape from the pages API
+interface Page {
+  id: string;
+  title?: string;
+  url?: string;
+  faviconUrl?: string;
+}
 
 let abortController: AbortController | null = null;
 let errors = 0;
@@ -49,10 +56,10 @@ export default function BrowserTabs({
   setActivePage,
 }: {
   sessionId: string;
-  activePage: SessionLiveURLs.Page | null;
-  setActivePage: (page: SessionLiveURLs.Page) => void;
+  activePage: Page | null;
+  setActivePage: (page: Page) => void;
 }) {
-  const [pages, setPages] = useState<SessionLiveURLs.Page[]>([]);
+  const [pages, setPages] = useState<Page[]>([]);
 
   useEffect(() => {
     const refetchPages = async () => {
@@ -82,7 +89,7 @@ export default function BrowserTabs({
     return null;
   }
 
-  const tabLoading = (t: SessionLiveURLs.Page) => !Boolean(t.title || t.url);
+  const tabLoading = (t: Page) => !Boolean(t.title || t.url);
 
   // hide tabs if there is only one page
   if (pages.length < 2) {

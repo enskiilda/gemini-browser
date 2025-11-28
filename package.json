@@ -10,16 +10,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@browserbasehq/sdk": "^2.6.0",
     "@browserbasehq/stagehand": "github:browserbase/stagehand#cheetah",
     "@onkernel/sdk": "^0.20.0",
     "@vercel/analytics": "^1.4.1",
-    "@vercel/edge-config": "^1.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.0.3",
     "lucide-react": "^0.479.0",
-    "moment-timezone": "^0.6.0",
     "next": "15.1.6",
     "playwright-core": "^1.55.0",
     "posthog-js": "^1.209.3",

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import moment from "moment-timezone";
 import { BrowserStep } from "@/app/types/ChatFeed";
 import {
   AgentLog,
@@ -17,6 +16,7 @@ const sessionCreationPromises = new Map<
   Promise<{
     sessionId: string;
     sessionUrl: string | null;
+    cdpWsUrl: string;
   }>
 >();
 
@@ -33,6 +33,7 @@ export function useAgentStream({
   const [state, setState] = useState<AgentStreamState>({
     sessionId: sessionId,
     sessionUrl: null,
+    cdpWsUrl: null,
     steps: [],
     logs: [],
     isLoading: false,
@@ -122,6 +123,7 @@ export function useAgentStream({
     }
 
     let cancelled = false;
+    let currentCdpWsUrl: string | null = null;
 
     const initializeStream = async () => {
       let currentSessionId = sessionId;
@@ -134,29 +136,10 @@ export function useAgentStream({
           let promise = sessionCreationPromises.get(goal);
           if (!promise) {
             promise = (async () => {
-              // Detect timezone using moment-timezone for cleaner abbreviations
-              const getTimezoneAbbreviation = () => {
-                try {
-                  // Only detect timezone on the client side
-                  if (typeof window === "undefined") {
-                    return "PDT"; // Server-side fallback
-                  }
-
-                  const abbr = moment.tz(moment.tz.guess()).format("z");
-                  return abbr;
-                } catch {
-                  return "PDT"; // Fallback
-                }
-              };
-
-              const timezone = getTimezoneAbbreviation();
-
               const sessionResponse = await fetch("/api/session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  timezone: timezone,
-                }),
+                body: JSON.stringify({}),
               });
 
               const sessionData = await sessionResponse.json();
@@ -172,6 +155,7 @@ export function useAgentStream({
               return {
                 sessionId: sessionData.sessionId as string,
                 sessionUrl: (sessionData.sessionUrl as string) ?? null,
+                cdpWsUrl: sessionData.cdpWsUrl as string,
               };
             })();
             sessionCreationPromises.set(goal, promise);
@@ -181,10 +165,12 @@ export function useAgentStream({
           if (cancelled) return;
 
           currentSessionId = result.sessionId;
+          currentCdpWsUrl = result.cdpWsUrl;
           setState((prev) => ({
             ...prev,
             sessionId: result.sessionId,
             sessionUrl: result.sessionUrl,
+            cdpWsUrl: result.cdpWsUrl,
           }));
         } catch (error) {
           const errorMessage =
@@ -214,6 +200,11 @@ export function useAgentStream({
         sessionId: currentSessionId!,
         goal,
       });
+
+      // Add cdpWsUrl if available
+      if (currentCdpWsUrl) {
+        params.set("cdpWsUrl", currentCdpWsUrl);
+      }
 
       const es = new EventSource(`/api/agent/stream?${params.toString()}`);
       eventSourceRef.current = es;
