@@ -138,8 +138,6 @@ export function useAgentStream({
             promise = (async () => {
               const sessionResponse = await fetch("/api/session", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({}),
               });
 
               const sessionData = await sessionResponse.json();
